@@ -113,3 +113,41 @@ web/vite.config.ts
 ```
 
 담당 필수 항목은 모두 통과했습니다. 외부 push·배포·GitHub 쓰기를 수행하지 않았고 실제 호스팅·GitHub Actions 실행은 검증하지 않았습니다. 로컬 검증 환경은 Windows/Node 24이며 Linux/Node 22 CI는 아직 실행 전입니다. 실제 데이터는 모든 역에 좌표가 있어서 좌표 누락 처리는 합성 fixture의 단위 테스트로 확인했습니다. 공개 타일의 실시간 가용성과 데이터 분석 자체의 정확성은 프런트엔드 검증 범위를 벗어나며 A·C 및 코디네이터의 검증과 구분합니다.
+
+## Linux CI Chromium 소켓 경로 수정 검증
+
+검증일: 2026-10-22 (한국 시간). Windows, Node `v24.16.0`, npm `11.13.0`에서 수정한 작업 트리를 검증했습니다.
+
+배정된 실패 사례는 GitHub Actions 실행 `39750598372`의 브라우저 스모크 테스트입니다. 기존 설정은 모든 OS에서 `TEMP`·`TMP`·`TMPDIR`를 긴 저장소 내부 `test-results/<run>/temporary`로 덮어썼습니다. `playwright.config.ts`에서 해당 폴더 생성과 세 환경 변수 설정을 `process.platform === 'win32'` 안으로 옮겼습니다. Linux/macOS에서는 기존 OS 임시 경로 설정을 유지합니다. `outputDir`, JSON 결과, 스크린샷 경로는 변경하지 않았습니다.
+
+| 항목 | expected | observed | passed |
+| --- | --- | --- | --- |
+| 1. Windows 브라우저 | `npx playwright test` → 2 passed, 기존 증거 경로 유지 | desktop·mobile-375 2 passed (5.5s); consoleErrors/pageErrors 모두 빈 배열; 기존 형식의 artifacts 안에 PNG 2개와 실행 폴더 안의 temporary 확인 | true |
+| 2. Linux 소켓 경로 | 수정된 설정에서 기본 `/tmp` 사용 시 전체 경로 UTF-8 길이 < 107바이트 | 설정 본문을 Node VM의 Linux 모의 환경에서 평가: 수정 전 175바이트로 assertion 실패, 수정 후 49바이트로 통과; TEMP/TMP/TMPDIR 미설정 상태 유지 | true |
+| 3. 단위 테스트·빌드 | `npm test` 및 `npm run build` 종료 코드 0 | Vitest 4개 파일·20개 테스트 통과; TypeScript 검사, Vite 빌드 및 version.json 생성 성공 | true |
+
+길이 계산에 사용한 경로는 다음과 같습니다. 둘 다 ASCII이므로 문자 수와 UTF-8 바이트 수가 같습니다.
+
+```text
+수정 전: /home/runner/work/seoul-commercial-analysis/seoul-commercial-analysis/web/test-results/run-2026-10-22T08-49-48-826Z-3307/temporary/org.chromium.Chromium.XXXXXX/SingletonSocket
+175바이트 >= 107
+
+수정 후: /tmp/org.chromium.Chromium.XXXXXX/SingletonSocket
+49바이트 < 107
+```
+
+수정 후 길이는 다음 명령으로 재계산할 수 있습니다.
+
+```sh
+node -e "console.log(Buffer.byteLength('/tmp/org.chromium.Chromium.XXXXXX/SingletonSocket', 'utf8'))"
+```
+
+OS별 설정 평가에서는 Linux와 macOS에서 임시 폴더를 생성하거나 세 환경 변수를 변경하지 않는지, Windows에서는 기존 실행별 temporary 경로를 세 변수에 동일하게 설정하는지 확인했습니다. macOS 모의 TMPDIR `/var/folders/ab/abcdefghijklmnopqrstuvwxyz1234/T`도 그대로 유지했고 예시 소켓 경로는 93바이트였습니다. 세 OS 모두 `test-results/<run>/artifacts`와 `results.json`의 경로가 유지됨을 확인했습니다.
+
+Windows 실제 실행 근거:
+
+- [results.json](test-results/run-2026-10-22T08-54-28-039Z-69004/results.json): expected 2, unexpected 0, skipped 0, flaky 0.
+- [데스크톱 스크린샷](test-results/run-2026-10-22T08-54-28-039Z-69004/artifacts/smoke-실제-데이터로-역-검색·상세·업종-추천을-탐색한다-desktop/desktop.png)
+- [모바일 스크린샷](test-results/run-2026-10-22T08-54-28-039Z-69004/artifacts/smoke-실제-데이터로-역-검색·상세·업종-추천을-탐색한다-mobile-375/mobile-375.png)
+
+WSL 목록에는 `docker-desktop`만 있었고 Docker 조회는 `dockerDesktopLinuxEngine` 파이프가 없어 실패했습니다. 따라서 Linux/macOS 실제 브라우저 실행과 원격 CI 재실행은 수행하지 않았으며, 위 POSIX 결과는 설정 분기 검증과 경로 계산입니다. Linux 계산은 외부에서 별도 임시 경로를 지정하지 않아 OS 기본 `/tmp`를 사용하는 조건이며, 사용자가 별도로 지정한 긴 임시 경로까지 짧게 만드는 변경은 아닙니다. 검증 후 미리보기 포트 4273의 리스너는 0개였고, push·배포·GitHub 쓰기·추가 설치·임시 폴더 정리는 수행하지 않았습니다.

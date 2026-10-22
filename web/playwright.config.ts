@@ -14,13 +14,16 @@ const localExecutable = existsSync(cache) ? execFileSync(process.execPath, [
 
 const run = process.env.SEOUL_E2E_RUN ?? `run-${new Date().toISOString().replace(/[:.]/g, '-')}-${process.pid}`;
 process.env.SEOUL_E2E_RUN = run;
-// Preserve earlier evidence and keep browser profiles inside the owned folder.
+// Preserve earlier evidence in a unique run directory.
 const runDirectory = path.join(root, 'test-results', run);
-const temporaryDirectory = path.join(runDirectory, 'temporary');
-mkdirSync(temporaryDirectory, { recursive: true });
-process.env.TEMP = temporaryDirectory;
-process.env.TMP = temporaryDirectory;
-process.env.TMPDIR = temporaryDirectory;
+// POSIX Chromium needs short Unix socket paths, so retain the OS temp defaults.
+if (process.platform === 'win32') {
+  const temporaryDirectory = path.join(runDirectory, 'temporary');
+  mkdirSync(temporaryDirectory, { recursive: true });
+  process.env.TEMP = temporaryDirectory;
+  process.env.TMP = temporaryDirectory;
+  process.env.TMPDIR = temporaryDirectory;
+}
 const port = Number(process.env.SEOUL_E2E_PORT ?? 4273);
 const baseURL = `http://127.0.0.1:${port}/seoul-commercial-analysis/`;
 

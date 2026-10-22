@@ -13,3 +13,7 @@ data/*.zip
 
 # 로컬 설정
 *.local
+
+# 웹 데이터 파이프라인: 공개 원본과 로컬 검증 캐시
+data/raw/
+.pytest_cache/

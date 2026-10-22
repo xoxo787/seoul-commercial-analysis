@@ -62,6 +62,8 @@ jobs:
     needs: web
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/web/.cache/ms-playwright
     defaults:
       run:
         working-directory: web
@@ -80,5 +82,7 @@ jobs:
         run: npm ci
       - name: Chromium 및 실행 의존성 설치
         run: npx playwright install --with-deps chromium
+      - name: 스모크 테스트용 사이트 빌드
+        run: npm run build
       - name: 데스크톱 및 모바일 스모크 테스트
         run: npm run test:e2e

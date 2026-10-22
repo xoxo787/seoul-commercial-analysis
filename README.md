@@ -118,7 +118,7 @@ MIT License — 자유롭게 사용, 수정, 공유 가능합니다.
 
 ## 웹 서비스
 
-**현재는 로컬 구현 및 검증 단계이며, 아직 공개 배포 전입니다.** 라이브 URL 자리표시: [서울 지하철 × 상권 웹 서비스](https://xoxo787.github.io/seoul-commercial-analysis/). 실제 배포 성공과 공개 URL 응답은 별도 확인이 필요합니다.
+**2026-10-22 GitHub Pages 배포를 완료했습니다.** [서울 지하철 × 상권 웹 서비스](https://xoxo787.github.io/seoul-commercial-analysis/)에서 이용할 수 있으며, 공개 URL 응답 `200`을 확인했습니다.
 
 역을 검색하거나 지도에서 선택해 승하차·매출 순위, 순위 격차 판정과 업종별 매출을 확인하는 Vite + TypeScript 정적 웹입니다. 지도는 Leaflet와 OpenStreetMap, 차트는 Chart.js를 사용합니다. 웹은 커밋된 JSON을 읽으며, 원본 데이터 재계산은 Python에서 수행합니다.
 
@@ -130,7 +130,7 @@ MIT License — 자유롭게 사용, 수정, 공유 가능합니다.
   → scripts/build_data.py (역 매칭·순위·통계·출처 메타데이터)
   → web/public/data/*.json (stations.json, summary.json을 커밋)
   → Vite 빌드 + version.json 생성 → web/dist/
-  → GitHub Pages (배포 워크플로 구성 완료, 실제 배포 전)
+  → GitHub Pages (GitHub Actions로 2026-10-22 배포 완료)
 
 push / pull_request → ci.yml
   ├─ Python 3.12: pip install -r requirements-dev.txt → pytest -q
@@ -145,7 +145,15 @@ main push / main에서 workflow_dispatch → deploy.yml
 
 두 워크플로의 최상위 권한은 `contents: read`이며, `pages: write`와 `id-token: write`는 배포 job에만 부여합니다. 공식 액션은 실제 조회한 전체 커밋 SHA로 고정했고, 각 `uses` 옆에 릴리스 태그를 기록했습니다. CI와 배포 빌드에서는 원본 데이터를 다운로드하거나 재계산하지 않습니다.
 
-배포 전에는 저장소의 Pages 게시 소스를 GitHub Actions로 설정하고 `github-pages` 환경의 배포 정책을 확인해야 합니다. 이 작업에서는 설정 변경·push·배포를 수행하지 않았으며, `configure-pages`의 자동 활성화도 꺼 두었습니다. 수동 실행은 `main`에서만 빌드·배포되고 동시 배포는 `pages` 그룹으로 제어합니다. [GitHub Pages 공식 워크플로 안내](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
+저장소의 Pages 게시 소스는 **GitHub Actions**로 설정되어 있습니다. 사용자 승인 후 2026-10-22 [PR #1](https://github.com/xoxo787/seoul-commercial-analysis/pull/1)을 `main`에 병합했으며, [배포 워크플로 실행](https://github.com/xoxo787/seoul-commercial-analysis/actions/runs/39751966336)이 성공했습니다. `configure-pages`의 자동 활성화는 꺼져 있습니다. 수동 실행은 `main`에서만 빌드·배포되고 동시 배포는 `pages` 그룹으로 제어합니다. [GitHub Pages 공식 워크플로 안내](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
+
+배포 확인 기록 (2026-10-22):
+
+- 배포 커밋: `b42e8f200e5d9920f7b1a9755d91eece1d88b20f`. 배포 워크플로의 **배포된 version.json의 커밋 검증** 단계가 통과했습니다.
+- 공개 [version.json](https://xoxo787.github.io/seoul-commercial-analysis/version.json) 응답: `{"commit":"b42e8f200e5d9920f7b1a9755d91eece1d88b20f","built_at":"2026-10-22T08:59:56.343Z"}`. `built_at`은 UTC 빌드 시각입니다.
+- 공개 [data/summary.json](https://xoxo787.github.io/seoul-commercial-analysis/data/summary.json) 응답 `200`: 분석 대상 **239개 역**, R² **0.1642**, Spearman ρ **0.5755** (소수 넷째 자리 반올림).
+- PR CI의 Python 데이터 검증, 웹 테스트 및 빌드, 브라우저 스모크 테스트가 모두 통과했습니다. 첫 실행의 Linux Chromium 소켓 경로 길이 초과 문제는 커밋 `76ad73f`에서 수정한 뒤 통과했습니다.
+- 라이브 브라우저에서 데스크톱 1440px 라이트와 375px 다크 화면을 확인했습니다. 콘솔 에러 0건, 가로 넘침 없음, OpenStreetMap 타일 로드와 “혜화” 검색 시 거품 판정 상세 표시를 확인했습니다.
 
 ### 로컬 실행과 테스트
 

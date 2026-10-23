@@ -15,7 +15,7 @@
 
 ## 실행한 명령과 관찰
 
-작업 디렉터리: `C:/Users/xoxox/orca/projects/seoul-commercial-analysis/web`.
+작업 디렉터리: 저장소의 `web/` 폴더.
 
 ```text
 node --version  -> v24.16.0
